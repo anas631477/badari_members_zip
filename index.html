@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>বদরী সদস্য তালিকা</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto;background:#fff;color:#111;margin:0;padding:0}
+  .wrap{max-width:800px;margin:0 auto;padding:20px}
+  .card{background:#fafafa;border-radius:10px;padding:16px;box-shadow:0 4px 12px rgba(0,0,0,.05)}
+  h2{margin:0 0 12px;font-size:20px;text-align:center}
+  .btn{background:#2563eb;color:#fff;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:14px}
+  .btn.danger{background:#ef4444}
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  th,td{padding:8px 10px;border-bottom:1px solid #eee;text-align:left}
+  th{background:#f1f5f9}
+  img{width:50px;height:50px;border-radius:6px;object-fit:cover}
+  input{padding:6px;width:100%;border-radius:6px;border:1px solid #ddd}
+  .modal-back{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:999}
+  .modal{background:#fff;padding:16px;border-radius:8px;width:320px}
+  .flex-right{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+  .small{font-size:13px;color:#666}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h2>বদরী সদস্য</h2>
+    <button id="addBtn" class="btn">নতুন যোগ করুন</button>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>ছবি</th>
+          <th>নাম</th>
+          <th>ফোন</th>
+          <th>ইমেইল</th>
+          <th>তারিখ</th>
+          <th>কর্ম</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal" class="modal-back">
+  <div class="modal">
+    <h3>নতুন সদস্য যোগ করুন</h3>
+    <form id="form">
+      <input type="hidden" id="id">
+      <label class="small">নাম</label>
+      <input id="name" required>
+      <label class="small">ফোন</label>
+      <input id="phone">
+      <label class="small">ইমেইল</label>
+      <input id="email" type="email">
+      <label class="small">ছবি (ফাইল)</label>
+      <input id="photoFile" type="file" accept="image/*">
+      <label class="small">তারিখ</label>
+      <input id="date" placeholder="YYYY-MM-DD">
+      <div class="flex-right">
+        <button type="button" id="cancel" class="btn danger">বাতিল</button>
+        <button type="submit" class="btn">সংরক্ষণ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  const LS_KEY='badri_members';
+  let data=[];
+  const tbody=document.getElementById('tbody');
+  const modal=document.getElementById('modal');
+  const form=document.getElementById('form');
+  const photoFile=document.getElementById('photoFile');
+
+  function load(){const r=localStorage.getItem(LS_KEY);data=r?JSON.parse(r):[];}
+  function save(){localStorage.setItem(LS_KEY,JSON.stringify(data));}
+  function uid(){return 'id_'+Math.random().toString(36).slice(2,9);}
+  function render(){
+    tbody.innerHTML='';
+    if(!data.length){tbody.innerHTML='<tr><td colspan="7" class="small">কোনো সদস্য নেই</td></tr>';return;}
+    data.forEach((d,i)=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+      <td>${i+1}</td>
+      <td>${d.photo?'<img src="'+d.photo+'">':''}</td>
+      <td>${d.name}</td>
+      <td>${d.phone||''}</td>
+      <td>${d.email||''}</td>
+      <td>${d.date||''}</td>
+      <td><button class="btn danger" data-act="del" data-id="${d.id}">মুছুন</button></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  function openModal(){modal.style.display='flex';}
+  function closeModal(){modal.style.display='none';form.reset();}
+  document.getElementById('addBtn').onclick=openModal;
+  document.getElementById('cancel').onclick=closeModal;
+
+  form.onsubmit=function(e){
+    e.preventDefault();
+    const file=photoFile.files[0];
+    const reader=new FileReader();
+    reader.onload=function(){
+      const obj={
+        id:uid(),
+        name:document.getElementById('name').value.trim(),
+        phone:document.getElementById('phone').value.trim(),
+        email:document.getElementById('email').value.trim(),
+        photo:reader.result || '',
+        date:document.getElementById('date').value.trim()
+      };
+      if(!obj.name){alert('নাম দিতে হবে');return;}
+      data.push(obj);save();render();closeModal();
+    };
+    if(file){reader.readAsDataURL(file);}else{
+      const obj={
+        id:uid(),
+        name:document.getElementById('name').value.trim(),
+        phone:document.getElementById('phone').value.trim(),
+        email:document.getElementById('email').value.trim(),
+        photo:'',
+        date:document.getElementById('date').value.trim()
+      };
+      if(!obj.name){alert('নাম দিতে হবে');return;}
+      data.push(obj);save();render();closeModal();
+    }
+  };
+
+  tbody.onclick=function(e){
+    const b=e.target.closest('button');if(!b)return;
+    const id=b.dataset.id;
+    data=data.filter(x=>x.id!==id);
+    save();render();
+  };
+
+  [modal].forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal();}));
+  load();render();
+})();
+</script>
+</body>
+</html>
